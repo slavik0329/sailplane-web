@@ -1,9 +1,24 @@
 import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { primary5 } from './colors';
-import fileListSource from '@tabcat/file-list-source';
 import useStore from './store/useStore';
 import { encryptFile } from './utils/encryption';
+
+/**
+ * Convert a FileList/File array to an async iterable source
+ * This replaces the @tabcat/file-list-source dependency
+ */
+async function* fileListToSource(files) {
+  for (const file of files) {
+    yield {
+      path: file.path || file.name,
+      content: (async function* () {
+        const arrayBuffer = await file.arrayBuffer();
+        yield new Uint8Array(arrayBuffer);
+      })(),
+    };
+  }
+}
 
 export function DropZone({ children, sharedFs, currentDirectory }) {
   const styles = {
@@ -43,7 +58,7 @@ export function DropZone({ children, sharedFs, currentDirectory }) {
       }
 
       setStatus({ message: 'Uploading' });
-      const listSource = fileListSource(acceptedFiles);
+      const listSource = fileListToSource(acceptedFiles);
       await sharedFs.current.upload(currentDirectory, listSource);
       setStatus({});
     },

@@ -25,7 +25,7 @@ export function FileItem({
   data,
   sharedFs,
   setCurrentDirectory,
-  ipfs,
+  helia,
   fileIndex,
   isParent,
 }) {
@@ -152,15 +152,22 @@ export function FileItem({
   }
 
   const getCID = async () => {
-    const cid = await sharedFs.current.read(path);
-    const fileInfo = await getFileInfoFromCID(cid, ipfs);
-    setFileInfo(fileInfo);
-    setCID(cid);
+    try {
+      if (!sharedFs.current || !sharedFs.current.read) return;
+      const cid = await sharedFs.current.read(path);
+      if (helia) {
+        const info = await getFileInfoFromCID(cid, helia);
+        setFileInfo(info);
+      }
+      setCID(cid);
+    } catch (error) {
+      console.error('Error getting CID:', error);
+    }
   };
 
   useEffect(() => {
     getCID();
-  }, [path]);
+  }, [path, helia]);
 
   const IconComponent = iconComponent;
 
@@ -191,7 +198,7 @@ export function FileItem({
 
     if (!fileBlob) {
       setStatus({ message: 'Fetching download' });
-      blob = await getBlobFromPath(sharedFs, path, ipfs);
+      blob = await getBlobFromPath(sharedFs, path, helia);
       setStatus({});
     } else {
       blob = fileBlob;
@@ -226,7 +233,7 @@ export function FileItem({
             } else {
               if (!fileBlob && isFileExtensionSupported(fileExtension)) {
                 setStatus({ message: 'Fetching preview' });
-                const blob = await getBlobFromPath(sharedFs, path, ipfs);
+                const blob = await getBlobFromPath(sharedFs, path, helia);
                 setStatus({});
                 setFileBlob(blob);
               } else {

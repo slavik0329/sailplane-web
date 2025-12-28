@@ -3,9 +3,9 @@ import './App.css';
 import { LeftPanel } from './LeftPanel';
 import { FileBlock } from './FileBlock';
 import { useWindowSize } from './hooks/useWindowSize';
-import useIPFS from './hooks/useIPFS';
-import OrbitDB from 'orbit-db';
-import Sailplane from '@cypsela/sailplane-node';
+import useHelia from './hooks/useHelia';
+import { createOrbitDB } from '@orbitdb/core';
+import { Sailplane } from './lib/SharedFS';
 import { LoadingRightBlock } from './LoadingRightBlock';
 import { Settings } from './Settings';
 import { Instances } from './Instances';
@@ -14,9 +14,10 @@ import useStore from './store/useStore';
 function App() {
   const windowSize = useWindowSize();
   const windowWidth = windowSize.width;
-  const ipfsObj = useIPFS();
+  const heliaObj = useHelia();
   const sharedFS = useRef({});
   const sailplaneRef = useRef(null);
+  const orbitdbRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [directoryContents, setDirectoryContents] = useState([]);
   const [currentDirectory, setCurrentDirectory] = useState('/r');
@@ -38,24 +39,29 @@ function App() {
   };
 
   const rootLS = async () => {
-    if (ready) {
-      const res = await sharedFS.current.fs.ls(currentDirectory);
+    if (ready && sharedFS.current && sharedFS.current.fs) {
+      try {
+        const res = await sharedFS.current.fs.ls(currentDirectory);
 
-      let contents = [];
+        let contents = [];
 
-      for (let lsItem of res) {
-        const type = sharedFS.current.fs.content(lsItem);
-        const pathSplit = lsItem.split('/');
-        const name = pathSplit[pathSplit.length - 1];
+        for (let lsItem of res) {
+          const type = sharedFS.current.fs.content(lsItem);
+          const pathSplit = lsItem.split('/');
+          const name = pathSplit[pathSplit.length - 1];
 
-        contents.push({
-          type,
-          name,
-          path: lsItem,
-        });
+          contents.push({
+            type,
+            name,
+            path: lsItem,
+          });
+        }
+
+        setDirectoryContents(contents);
+      } catch (error) {
+        console.error('Error listing directory:', error);
+        setDirectoryContents([]);
       }
-
-      setDirectoryContents(contents);
     }
   };
 
@@ -64,28 +70,41 @@ function App() {
   }, [ready, currentDirectory, lastUpdateTime]);
 
   const connectOrbit = useCallback(
-    async (ipfs, doLS) => {
-      setStatus({ message: 'Initializing' });
-      const orbitdb = await OrbitDB.createInstance(ipfs);
+    async (helia, doLS) => {
+      setStatus({ message: 'Initializing OrbitDB' });
 
-      const sailplane = await Sailplane.create(orbitdb, {});
+      // Create OrbitDB instance if not already created
+      if (!orbitdbRef.current) {
+        orbitdbRef.current = await createOrbitDB({ ipfs: helia });
+      }
+
+      const orbitdb = orbitdbRef.current;
+
+      // Create Sailplane instance if not already created
+      if (!sailplaneRef.current) {
+        sailplaneRef.current = await Sailplane.create(orbitdb, {});
+      }
+
+      const sailplane = sailplaneRef.current;
       let address;
-      if (instances.length) {
+
+      if (instances.length && currentInstance) {
         address = currentInstance.address;
       } else {
         const name = 'main';
+        setStatus({ message: 'Creating new drive' });
         address = await sailplane.determineAddress('superdrive', {
           meta: { name },
         });
         addInstance(name, address.toString());
       }
+
+      setStatus({ message: 'Mounting drive' });
       sharedFS.current = await sailplane.mount(address, {});
 
       sharedFS.current.events.on('updated', () => {
         setLastUpdateTime(Date.now());
       });
-
-      sailplaneRef.current = sailplane;
 
       if (doLS) {
         setCurrentDirectory('/r');
@@ -98,16 +117,17 @@ function App() {
     [instances, instanceIndex, addInstance, setStatus, currentInstance],
   );
 
-  // Connect orbit
+  // Connect when Helia is ready
   useEffect(() => {
-    if (ipfsObj.isIpfsReady && !ready) {
-      connectOrbit(ipfsObj.ipfs);
+    if (heliaObj.isHeliaReady && heliaObj.helia && !ready) {
+      connectOrbit(heliaObj.helia);
     }
-  }, [ipfsObj.ipfs, ipfsObj.isIpfsReady, ready, connectOrbit]);
+  }, [heliaObj.helia, heliaObj.isHeliaReady, ready, connectOrbit]);
 
+  // Reconnect when instance changes
   useEffect(() => {
-    if (ipfsObj.isIpfsReady && ready) {
-      connectOrbit(ipfsObj.ipfs, true);
+    if (heliaObj.isHeliaReady && heliaObj.helia && ready) {
+      connectOrbit(heliaObj.helia, true);
     }
   }, [instanceIndex, ready, instances]);
 
@@ -116,7 +136,7 @@ function App() {
       return (
         <FileBlock
           sharedFs={sharedFS}
-          ipfs={ipfsObj.ipfs}
+          helia={heliaObj.helia}
           directoryContents={directoryContents}
           setCurrentDirectory={setCurrentDirectory}
           currentDirectory={currentDirectory}

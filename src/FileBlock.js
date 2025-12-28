@@ -1,10 +1,10 @@
-import {FileItem} from './components/FileItem';
-import {DropZone} from './DropZone';
+import { FileItem } from './components/FileItem';
+import { DropZone } from './DropZone';
 import React from 'react';
-import {primary2, primary35} from './colors';
-import {FolderTools} from './FolderTools';
-import {DragDropContext, Droppable} from 'react-beautiful-dnd';
-import {StatusBar} from './StatusBar';
+import { primary2, primary35 } from './colors';
+import { FolderTools } from './FolderTools';
+import { DragDropContext, Droppable } from 'react-beautiful-dnd';
+import { StatusBar } from './StatusBar';
 
 const styles = {
   container: {
@@ -47,7 +47,7 @@ const styles = {
 
 export function FileBlock({
   sharedFs,
-  ipfs,
+  helia,
   directoryContents,
   setCurrentDirectory,
   currentDirectory,
@@ -76,7 +76,7 @@ export function FileBlock({
         setCurrentDirectory={setCurrentDirectory}
       />
       <div style={styles.fileHeader}>
-        <div style={{...styles.fileHeaderItem}}>Name</div>
+        <div style={{ ...styles.fileHeaderItem }}>Name</div>
         <div style={styles.fileHeaderItem}>Size</div>
         <div style={styles.fileHeaderItem}></div>
       </div>
@@ -106,19 +106,15 @@ export function FileBlock({
                       fileIndex={0}
                       isParent={true}
                       key={parentPath}
-                      data={{path: parentPath, type: 'dir'}}
+                      data={{ path: parentPath, type: 'dir' }}
                       sharedFs={sharedFs}
-                      ipfs={ipfs}
+                      helia={helia}
                       setCurrentDirectory={setCurrentDirectory}
                     />
                   ) : null}
                   <div
                     ref={provided.innerRef}
-                    style={
-                      {
-                        // backgroundColor: snapshot.isDraggingOver ? 'blue' : 'grey',
-                      }
-                    }
+                    style={{}}
                     {...provided.droppableProps}>
                     {!directoryContents.length ? (
                       <p>drag files to upload</p>
@@ -130,7 +126,7 @@ export function FileBlock({
                             key={fileItem.path}
                             data={fileItem}
                             sharedFs={sharedFs}
-                            ipfs={ipfs}
+                            helia={helia}
                             setCurrentDirectory={setCurrentDirectory}
                           />
                         ))}
@@ -149,7 +145,7 @@ export function FileBlock({
           </DragDropContext>
         </DropZone>
       </div>
-      <StatusBar/>
+      <StatusBar />
     </div>
   );
 }

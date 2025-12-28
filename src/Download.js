@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './App.css';
 import { LeftPanel } from './LeftPanel';
 import { useWindowSize } from './hooks/useWindowSize';
-import useIPFS from './hooks/useIPFS';
+import useHelia from './hooks/useHelia';
 import { LoadingRightBlock } from './LoadingRightBlock';
 import { useParams } from 'react-router-dom';
 import useStore from './store/useStore';
@@ -13,7 +13,7 @@ import { DownloadPanel } from './DownloadPanel';
 function Download() {
   const windowSize = useWindowSize();
   const windowWidth = windowSize.width;
-  const ipfsObj = useIPFS();
+  const heliaObj = useHelia();
   const [ready, setReady] = useState(false);
   const [downloadComplete, setDownloadComplete] = useState(false);
 
@@ -32,14 +32,14 @@ function Download() {
   };
 
   useEffect(() => {
-    if (ipfsObj.isIpfsReady && !ready) {
+    if (heliaObj.isHeliaReady && !ready) {
       setReady(true);
     }
-  }, [ipfsObj.ipfs, ipfsObj.isIpfsReady, ready]);
+  }, [heliaObj.helia, heliaObj.isHeliaReady, ready]);
 
   const getDownload = async () => {
     setStatus({ message: 'Fetching file' });
-    const blob = await getBlobFromPathCID(cleanCID, cleanPath, ipfsObj.ipfs);
+    const blob = await getBlobFromPathCID(cleanCID, cleanPath, heliaObj.helia);
     setStatus({});
 
     const pathSplit = cleanPath.split('/');
