@@ -1,11 +1,10 @@
-import React, {useState} from 'react';
-import {ToolItem} from './components/ToolItem';
-import {FiFolderPlus, FiUnlock, FiLock} from 'react-icons/fi';
-import {errorColor, goodColor, primary} from './colors';
-import {Breadcrumb} from './components/Breadcrumb';
+import React, { useState } from 'react';
+import { ToolItem } from './components/ToolItem';
+import { FiFolderPlus, FiUnlock, FiLock } from 'react-icons/fi';
+import { errorColor, goodColor, primary } from './colors';
+import { Breadcrumb } from './components/Breadcrumb';
 import useTextInput from './hooks/useTextInput';
-import {useDispatch, useSelector} from 'react-redux';
-import {clearEncryptionKey, setEncryptionKey} from './actions/main';
+import useStore from './store/useStore';
 
 const styles = {
   tools: {
@@ -23,11 +22,13 @@ const styles = {
   },
 };
 
-export function FolderTools({currentDirectory, sharedFs, setCurrentDirectory}) {
+export function FolderTools({ currentDirectory, sharedFs, setCurrentDirectory }) {
   const [addFolderMode, setAddFolderMode] = useState(false);
   const [securePanelOpen, setSecurePanelOpen] = useState(false);
-  const dispatch = useDispatch();
-  const encryptionKey = useSelector((state) => state.main.encryptionKey);
+
+  const encryptionKey = useStore((state) => state.encryptionKey);
+  const setEncryptionKey = useStore((state) => state.setEncryptionKey);
+  const clearEncryptionKey = useStore((state) => state.clearEncryptionKey);
 
   const createFolder = async (newFolderName) => {
     try {
@@ -35,7 +36,6 @@ export function FolderTools({currentDirectory, sharedFs, setCurrentDirectory}) {
       setAddFolderMode(false);
     } catch (e) {
       console.log('Mkdir error', e);
-      // Todo: handle error
     }
   };
 
@@ -50,7 +50,7 @@ export function FolderTools({currentDirectory, sharedFs, setCurrentDirectory}) {
   );
 
   const setSecure = (password) => {
-    dispatch(setEncryptionKey(password, 'string'));
+    setEncryptionKey(password, 'string');
     setSecurePanelOpen(false);
   };
 
@@ -81,10 +81,10 @@ export function FolderTools({currentDirectory, sharedFs, setCurrentDirectory}) {
                 iconComponent={encryptionKey ? FiLock : FiUnlock}
                 size={18}
                 defaultColor={encryptionKey ? goodColor : null}
-                changeColor={encryptionKey?errorColor:goodColor}
+                changeColor={encryptionKey ? errorColor : goodColor}
                 onClick={() => {
                   if (encryptionKey) {
-                    dispatch(clearEncryptionKey());
+                    clearEncryptionKey();
                   } else {
                     setSecurePanelOpen(true);
                   }

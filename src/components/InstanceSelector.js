@@ -1,14 +1,14 @@
-import React, {useState} from 'react';
-import {primary45} from '../colors';
-import {useDispatch, useSelector} from 'react-redux';
-import {SmallInstanceItem} from './SmallInstanceItem';
+import React, { useState } from 'react';
+import { primary45 } from '../colors';
+import { SmallInstanceItem } from './SmallInstanceItem';
 import useHover from '../hooks/useHover';
-import {setInstanceIndex} from '../actions/main';
+import useStore from '../store/useStore';
 
-export function InstanceSelector({}) {
-  const main = useSelector((state) => state.main);
-  const dispatch = useDispatch();
-  const {instances, instanceIndex} = main;
+export function InstanceSelector() {
+  const instances = useStore((state) => state.instances);
+  const instanceIndex = useStore((state) => state.instanceIndex);
+  const setInstanceIndex = useStore((state) => state.setInstanceIndex);
+
   const currentInstance = instances[instanceIndex];
   const [menuEnabled, setMenuEnabled] = useState(false);
   const [hoverRef, isHovered] = useHover();
@@ -57,7 +57,7 @@ export function InstanceSelector({}) {
                 const instanceIndexToUse = instances.findIndex(
                   (inst) => inst === instance,
                 );
-                dispatch(setInstanceIndex(instanceIndexToUse));
+                setInstanceIndex(instanceIndexToUse);
               }}
             />
           ))}

@@ -1,34 +1,35 @@
-import React, {useEffect, useState} from 'react';
-import {primary, primary2, primary45, primary5} from '../colors';
-import {FaFile, FaFolder, FaLock} from 'react-icons/fa';
-import {FiFile, FiLock} from 'react-icons/fi';
-import {FiDownload, FiEdit, FiTrash, FiShare} from 'react-icons/fi';
+import React, { useEffect, useState } from 'react';
+import { primary, primary2, primary45, primary5 } from '../colors';
+import { FaFolder } from 'react-icons/fa';
+import { FiFile, FiLock } from 'react-icons/fi';
+import { FiDownload, FiEdit, FiTrash, FiShare } from 'react-icons/fi';
 import useHover from '../hooks/useHover';
-import {ToolItem} from './ToolItem';
-import {FilePreview} from './FilePreview';
-import {Link} from 'react-router-dom';
+import { ToolItem } from './ToolItem';
+import { FilePreview } from './FilePreview';
+import { Link } from 'react-router-dom';
 import {
   getBlobFromPath,
-  getFileExtensionFromFilename, getFileInfoFromCID, humanFileSize,
+  getFileExtensionFromFilename,
+  getFileInfoFromCID,
+  humanFileSize,
   isFileExtensionSupported,
   sha256,
 } from '../utils/Utils';
-import {saveAs} from 'file-saver';
-import {Draggable} from 'react-beautiful-dnd';
+import { saveAs } from 'file-saver';
+import { Draggable } from 'react-beautiful-dnd';
 import useTextInput from '../hooks/useTextInput';
-import {useDispatch, useSelector} from 'react-redux';
-import {setStatus} from '../actions/tempData';
-import {decryptFile, getEncryptionInfoFromFilename} from '../utils/encryption';
+import useStore from '../store/useStore';
+import { decryptFile, getEncryptionInfoFromFilename } from '../utils/encryption';
 
 export function FileItem({
   data,
   sharedFs,
   setCurrentDirectory,
-  ipfs,
+  helia,
   fileIndex,
   isParent,
 }) {
-  const {path, type} = data;
+  const { path, type } = data;
   const pathSplit = path.split('/');
   const name = pathSplit[pathSplit.length - 1];
   const [hoverRef, isHovered] = useHover();
@@ -45,7 +46,7 @@ export function FileItem({
     passHash,
   } = getEncryptionInfoFromFilename(name);
 
-  const dispatch = useDispatch();
+  const setStatus = useStore((state) => state.setStatus);
 
   const InputComponent = useTextInput(
     editMode,
@@ -64,19 +65,17 @@ export function FileItem({
 
       let blob = await getBlob();
 
-      dispatch(setStatus({message: 'Decrypting file'}));
+      setStatus({ message: 'Decrypting file' });
       blob = await decryptFile(blob, password);
-      dispatch(setStatus({}));
+      setStatus({});
 
       if (!blob) {
-        dispatch(
-          setStatus({
-            message: 'Error decrypting file: Incorrect password!',
-            isError: true,
-          }),
-        );
+        setStatus({
+          message: 'Error decrypting file: Incorrect password!',
+          isError: true,
+        });
         setTimeout(() => {
-          dispatch(setStatus({}));
+          setStatus({});
         }, 3000);
       }
 
@@ -139,7 +138,6 @@ export function FileItem({
       opacity:
         (isHovered || fileBlob || enterPasswordMode) && !isParent ? 1 : 0,
       fontSize: 14,
-      // width: 80,
     },
   };
 
@@ -154,24 +152,30 @@ export function FileItem({
   }
 
   const getCID = async () => {
-    const cid = await sharedFs.current.read(path);
-    const fileInfo = await getFileInfoFromCID(cid, ipfs);
-    // console.log('fileinfo', fileInfo)
-    setFileInfo(fileInfo);
-    setCID(cid);
+    try {
+      if (!sharedFs.current || !sharedFs.current.read) return;
+      const cid = await sharedFs.current.read(path);
+      if (helia) {
+        const info = await getFileInfoFromCID(cid, helia);
+        setFileInfo(info);
+      }
+      setCID(cid);
+    } catch (error) {
+      console.error('Error getting CID:', error);
+    }
   };
 
   useEffect(() => {
     getCID();
-  }, [path]);
+  }, [path, helia]);
 
   const IconComponent = iconComponent;
 
   const rename = async (editNameValue) => {
     try {
-      dispatch(setStatus({message: 'Renaming file'}));
+      setStatus({ message: 'Renaming file' });
       await sharedFs.current.move(path, parentPath, editNameValue);
-      dispatch(setStatus({}));
+      setStatus({});
     } catch (e) {
       console.log('Error moving!', e);
     }
@@ -185,7 +189,6 @@ export function FileItem({
 
     return {
       ...style,
-      // cannot be 0, but make it super tiny
       transitionDuration: `0.001s`,
     };
   }
@@ -194,9 +197,9 @@ export function FileItem({
     let blob;
 
     if (!fileBlob) {
-      dispatch(setStatus({message: 'Fetching download'}));
-      blob = await getBlobFromPath(sharedFs, path, ipfs);
-      dispatch(setStatus({}));
+      setStatus({ message: 'Fetching download' });
+      blob = await getBlobFromPath(sharedFs, path, helia);
+      setStatus({});
     } else {
       blob = fileBlob;
     }
@@ -229,9 +232,9 @@ export function FileItem({
               setCurrentDirectory(path);
             } else {
               if (!fileBlob && isFileExtensionSupported(fileExtension)) {
-                dispatch(setStatus({message: 'Fetching preview'}));
-                const blob = await getBlobFromPath(sharedFs, path, ipfs);
-                dispatch(setStatus({}));
+                setStatus({ message: 'Fetching preview' });
+                const blob = await getBlobFromPath(sharedFs, path, helia);
+                setStatus({});
                 setFileBlob(blob);
               } else {
                 setFileBlob(null);
@@ -251,7 +254,7 @@ export function FileItem({
             )}
           </div>
           <div style={styles.nameContainer}>
-            {type!=='dir' && fileInfo?humanFileSize(fileInfo.size):null}
+            {type !== 'dir' && fileInfo ? humanFileSize(fileInfo.size) : null}
           </div>
           <div style={styles.tools}>
             {!enterPasswordMode ? (
@@ -297,15 +300,13 @@ export function FileItem({
                   iconComponent={FiTrash}
                   tooltip={'Delete'}
                   onClick={async () => {
-                    dispatch(
-                      setStatus({
-                        message: `Deleting ${
-                          type === 'dir' ? 'folder' : 'file'
-                        }`,
-                      }),
-                    );
+                    setStatus({
+                      message: `Deleting ${
+                        type === 'dir' ? 'folder' : 'file'
+                      }`,
+                    });
                     await sharedFs.current.remove(path);
-                    dispatch(setStatus({}));
+                    setStatus({});
                   }}
                 />
               </div>
@@ -325,7 +326,7 @@ export function FileItem({
 
   return (
     <Draggable draggableId={path} index={fileIndex}>
-      {({innerRef, draggableProps, dragHandleProps}, snapshot) => {
+      {({ innerRef, draggableProps, dragHandleProps }, snapshot) => {
         return (
           <div
             ref={innerRef}

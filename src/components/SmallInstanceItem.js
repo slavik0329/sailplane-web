@@ -1,12 +1,8 @@
 import React from 'react';
-import {FaChevronRight} from 'react-icons/fa';
-import {primary45} from '../colors';
-import {useSelector} from 'react-redux';
-import * as PropTypes from 'prop-types';
-import {InstanceSelector} from './InstanceSelector';
+import { primary45 } from '../colors';
 import useHover from '../hooks/useHover';
 
-export function SmallInstanceItem({name, onClick}) {
+export function SmallInstanceItem({ name, onClick }) {
   const [hoverRef, isHovered] = useHover();
 
   const styles = {
