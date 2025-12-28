@@ -1,11 +1,11 @@
 import React from 'react';
-import {errorColor, primary3} from './colors';
-import {FiLoader, FiAlertTriangle} from 'react-icons/fi';
-import {useSelector} from 'react-redux';
+import { errorColor, primary3 } from './colors';
+import { FiLoader, FiAlertTriangle } from 'react-icons/fi';
+import useStore from './store/useStore';
 
 export function StatusBar() {
-  const status = useSelector((state) => state.tempData.status);
-  const {message, isError} = status;
+  const status = useStore((state) => state.status);
+  const { message, isError } = status;
 
   const styles = {
     container: {

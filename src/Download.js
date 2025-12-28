@@ -1,19 +1,16 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
-import {LeftPanel} from './LeftPanel';
-import {useWindowSize} from './hooks/useWindowSize';
+import { LeftPanel } from './LeftPanel';
+import { useWindowSize } from './hooks/useWindowSize';
 import useIPFS from './hooks/useIPFS';
-import OrbitDB from 'orbit-db';
-import Sailplane from '@cypsela/sailplane-node';
-import {LoadingRightBlock} from './LoadingRightBlock';
-import {hot} from 'react-hot-loader';
-import {useDispatch} from 'react-redux';
-import {setStatus} from './actions/tempData';
-import {getBlobFromPathCID} from './utils/Utils';
-import {saveAs} from 'file-saver';
-import {DownloadPanel} from './DownloadPanel';
+import { LoadingRightBlock } from './LoadingRightBlock';
+import { useParams } from 'react-router-dom';
+import useStore from './store/useStore';
+import { getBlobFromPathCID } from './utils/Utils';
+import { saveAs } from 'file-saver';
+import { DownloadPanel } from './DownloadPanel';
 
-function Download({match}) {
+function Download() {
   const windowSize = useWindowSize();
   const windowWidth = windowSize.width;
   const ipfsObj = useIPFS();
@@ -21,10 +18,10 @@ function Download({match}) {
   const [downloadComplete, setDownloadComplete] = useState(false);
 
   const [currentRightPanel, setCurrentRightPanel] = useState('files');
-  const {cid, path} = match.params;
+  const { cid, path } = useParams();
   const cleanPath = decodeURIComponent(path);
   const cleanCID = decodeURIComponent(cid);
-  const dispatch = useDispatch();
+  const setStatus = useStore((state) => state.setStatus);
 
   const styles = {
     container: {
@@ -41,9 +38,9 @@ function Download({match}) {
   }, [ipfsObj.ipfs, ipfsObj.isIpfsReady, ready]);
 
   const getDownload = async () => {
-    dispatch(setStatus({message: 'Fetching file'}));
+    setStatus({ message: 'Fetching file' });
     const blob = await getBlobFromPathCID(cleanCID, cleanPath, ipfsObj.ipfs);
-    dispatch(setStatus({}));
+    setStatus({});
 
     const pathSplit = cleanPath.split('/');
     const name = pathSplit[pathSplit.length - 1];
@@ -74,4 +71,4 @@ function Download({match}) {
   );
 }
 
-export default hot(module)(Download);
+export default Download;

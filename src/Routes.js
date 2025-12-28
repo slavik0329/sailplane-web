@@ -1,21 +1,15 @@
 import React from 'react';
-import {HashRouter as Router, Route} from 'react-router-dom';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import App from './App';
-import Download from "./Download";
+import Download from './Download';
 
-const styles = {
-  container: {
-    // maxWidth: 900,
-    // margin: '0 auto',
-    // backgroundColor: '#FFF',
-  },
-};
-
-export default function Routes() {
+export default function AppRoutes() {
   return (
     <Router>
-      <Route exact path="/" component={App} />
-      <Route exact path="/download/:cid/:path" component={Download} />
+      <Routes>
+        <Route path="/" element={<App />} />
+        <Route path="/download/:cid/:path" element={<Download />} />
+      </Routes>
     </Router>
   );
 }

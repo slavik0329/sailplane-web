@@ -1,12 +1,11 @@
-import React, {useCallback} from 'react';
-import {useDropzone} from 'react-dropzone';
-import {primary5} from './colors';
+import React, { useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { primary5 } from './colors';
 import fileListSource from '@tabcat/file-list-source';
-import {useDispatch, useSelector} from 'react-redux';
-import {setStatus} from './actions/tempData';
-import {encryptFile} from './utils/encryption';
+import useStore from './store/useStore';
+import { encryptFile } from './utils/encryption';
 
-export function DropZone({children, sharedFs, currentDirectory}) {
+export function DropZone({ children, sharedFs, currentDirectory }) {
   const styles = {
     container: {
       cursor: 'pointer',
@@ -21,8 +20,8 @@ export function DropZone({children, sharedFs, currentDirectory}) {
     },
   };
 
-  const dispatch = useDispatch();
-  const encryptionKey = useSelector((state) => state.main.encryptionKey);
+  const encryptionKey = useStore((state) => state.encryptionKey);
+  const setStatus = useStore((state) => state.setStatus);
 
   const onDrop = useCallback(
     async (acceptedFiles) => {
@@ -31,29 +30,27 @@ export function DropZone({children, sharedFs, currentDirectory}) {
         let i = 0;
         for (let file of acceptedFiles) {
           i++;
-          dispatch(
-            setStatus({
-              message: `[${i}/${acceptedFiles.length}] Encrypting ${file.path}`,
-            }),
-          );
+          setStatus({
+            message: `[${i}/${acceptedFiles.length}] Encrypting ${file.path}`,
+          });
 
           const encryptedBlob = await encryptFile(file, encryptionKey.key);
-          dispatch(setStatus({}));
+          setStatus({});
 
           encryptedFiles.push(encryptedBlob);
         }
         acceptedFiles = encryptedFiles;
       }
 
-      dispatch(setStatus({message: 'Uploading'}));
+      setStatus({ message: 'Uploading' });
       const listSource = fileListSource(acceptedFiles);
       await sharedFs.current.upload(currentDirectory, listSource);
-      dispatch(setStatus({}));
+      setStatus({});
     },
-    [currentDirectory, encryptionKey],
+    [currentDirectory, encryptionKey, setStatus, sharedFs],
   );
 
-  const {getRootProps, getInputProps, isDragActive} = useDropzone({
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     noClick: true,
   });

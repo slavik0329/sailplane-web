@@ -1,10 +1,9 @@
-import React, {useState} from 'react';
-import {primary4} from './colors';
-import {Instance} from './components/Instance';
-import {FiPlusCircle, FiUpload} from 'react-icons/fi';
+import React, { useState } from 'react';
+import { primary4 } from './colors';
+import { Instance } from './components/Instance';
+import { FiPlusCircle, FiUpload } from 'react-icons/fi';
 import useTextInput from './hooks/useTextInput';
-import {useDispatch, useSelector} from 'react-redux';
-import {addInstance, removeInstance, setInstanceIndex} from './actions/main';
+import useStore from './store/useStore';
 
 const styles = {
   container: {
@@ -42,21 +41,25 @@ const styles = {
   },
 };
 
-export function Instances({sailplane}) {
+export function Instances({ sailplane }) {
   const [addInstanceMode, setAddInstanceMode] = useState(false);
   const [importInstanceMode, setImportInstanceMode] = useState(false);
-  const dispatch = useDispatch();
-  const main = useSelector((state) => state.main);
-  const {instances, instanceIndex} = main;
+
+  const instances = useStore((state) => state.instances);
+  const instanceIndex = useStore((state) => state.instanceIndex);
+  const addInstance = useStore((state) => state.addInstance);
+  const removeInstance = useStore((state) => state.removeInstance);
+  const setInstanceIndex = useStore((state) => state.setInstanceIndex);
 
   const createInstance = async (name) => {
-    const address = await sailplane.determineAddress('superdrive', { meta: { name }});
+    const address = await sailplane.determineAddress('superdrive', { meta: { name } });
 
-    dispatch(addInstance(name, address.toString()));
+    addInstance(name, address.toString());
     setAddInstanceMode(false);
   };
+
   const importInstance = async (address) => {
-    dispatch(addInstance('Imported #' + (instances.length + 1), address));
+    addInstance('Imported #' + (instances.length + 1), address);
     setImportInstanceMode(false);
   };
 
@@ -92,7 +95,7 @@ export function Instances({sailplane}) {
                 className={'addInstance'}
                 onClick={() => setAddInstanceMode(true)}>
                 <FiPlusCircle color={primary4} size={18} style={styles.icon} />
-                <span style={{marginRight: 6}}>Create instance</span>
+                <span style={{ marginRight: 6 }}>Create instance</span>
               </div>
               <div
                 style={styles.tools}
@@ -116,10 +119,10 @@ export function Instances({sailplane}) {
             data={instance}
             selected={instance === instances[instanceIndex]}
             onClick={() => {
-              dispatch(setInstanceIndex(index));
+              setInstanceIndex(index);
             }}
             onDelete={() => {
-              dispatch(removeInstance(index));
+              removeInstance(index);
             }}
           />
         ))}

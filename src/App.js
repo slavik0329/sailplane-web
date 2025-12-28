@@ -1,18 +1,15 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
-import {LeftPanel} from './LeftPanel';
-import {FileBlock} from './FileBlock';
-import {useWindowSize} from './hooks/useWindowSize';
+import { LeftPanel } from './LeftPanel';
+import { FileBlock } from './FileBlock';
+import { useWindowSize } from './hooks/useWindowSize';
 import useIPFS from './hooks/useIPFS';
 import OrbitDB from 'orbit-db';
 import Sailplane from '@cypsela/sailplane-node';
-import {LoadingRightBlock} from './LoadingRightBlock';
-import {hot} from 'react-hot-loader';
-import {Settings} from './Settings';
-import {Instances} from './Instances';
-import {useSelector, useDispatch} from 'react-redux';
-import {addInstance} from './actions/main';
-import {setStatus} from "./actions/tempData";
+import { LoadingRightBlock } from './LoadingRightBlock';
+import { Settings } from './Settings';
+import { Instances } from './Instances';
+import useStore from './store/useStore';
 
 function App() {
   const windowSize = useWindowSize();
@@ -26,9 +23,10 @@ function App() {
   const [lastUpdateTime, setLastUpdateTime] = useState(null);
   const [currentRightPanel, setCurrentRightPanel] = useState('files');
 
-  const dispatch = useDispatch();
-  const main = useSelector((state) => state.main);
-  const {instances, instanceIndex} = main;
+  const instances = useStore((state) => state.instances);
+  const instanceIndex = useStore((state) => state.instanceIndex);
+  const addInstance = useStore((state) => state.addInstance);
+  const setStatus = useStore((state) => state.setStatus);
   const currentInstance = instances[instanceIndex];
 
   const styles = {
@@ -67,7 +65,7 @@ function App() {
 
   const connectOrbit = useCallback(
     async (ipfs, doLS) => {
-      dispatch(setStatus({message: 'Initializing'}));
+      setStatus({ message: 'Initializing' });
       const orbitdb = await OrbitDB.createInstance(ipfs);
 
       const sailplane = await Sailplane.create(orbitdb, {});
@@ -77,9 +75,9 @@ function App() {
       } else {
         const name = 'main';
         address = await sailplane.determineAddress('superdrive', {
-          meta: {name},
+          meta: { name },
         });
-        dispatch(addInstance(name, address.toString()));
+        addInstance(name, address.toString());
       }
       sharedFS.current = await sailplane.mount(address, {});
 
@@ -88,7 +86,6 @@ function App() {
       });
 
       sailplaneRef.current = sailplane;
-      // console.log('adds', await ipfs.config.get('Addresses'));
 
       if (doLS) {
         setCurrentDirectory('/r');
@@ -96,12 +93,12 @@ function App() {
       } else {
         setReady(true);
       }
-      dispatch(setStatus({}));
+      setStatus({});
     },
-    [instances, instanceIndex],
+    [instances, instanceIndex, addInstance, setStatus, currentInstance],
   );
 
-  // Connect orbit todo: refactor hook
+  // Connect orbit
   useEffect(() => {
     if (ipfsObj.isIpfsReady && !ready) {
       connectOrbit(ipfsObj.ipfs);
@@ -146,4 +143,4 @@ function App() {
   );
 }
 
-export default hot(module)(App);
+export default App;
