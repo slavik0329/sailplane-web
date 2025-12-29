@@ -11,7 +11,7 @@ export function InstanceSelector() {
 
   const currentInstance = instances[instanceIndex];
   const [menuEnabled, setMenuEnabled] = useState(false);
-  const [hoverRef, isHovered] = useHover();
+  const [hoverRef] = useHover();
 
   const filteredInstances = instances.filter(
     (instance) => instance !== currentInstance,

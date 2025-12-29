@@ -1,5 +1,5 @@
 import React from 'react';
-import {errorColor, primary2, primary3, primary4, primary45} from '../colors';
+import {errorColor, primary2, primary3, primary45} from '../colors';
 import useHover from '../hooks/useHover';
 import {ToolItem} from './ToolItem';
 import {FiTrash} from 'react-icons/fi';

@@ -1,7 +1,6 @@
 import {getFileExtensionFromFilename, sha256} from './Utils';
 
 const pbkdf2iterations = 10000;
-const sailplaneExtension = 'encrypted-sailplane';
 
 function readfile(file) {
   return new Promise((resolve, reject) => {
