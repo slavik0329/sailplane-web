@@ -1,6 +1,5 @@
 import { mfs } from '@helia/mfs';
 import { unixfs } from '@helia/unixfs';
-import { createOrbitDB } from '@orbitdb/core';
 import { EventEmitter } from 'events';
 
 /**
@@ -19,6 +18,7 @@ class SharedFS {
     this.unixfs = unixfs(helia);
     this.events = new EventEmitter();
     this.rootPath = '/r';
+    this._typeCache = new Map();
 
     // Listen for OrbitDB updates
     if (db) {
@@ -44,7 +44,10 @@ class SharedFS {
           const mfsPath = this._toMfsPath(path);
 
           for await (const entry of this.mfs.ls(mfsPath)) {
-            entries.push(`${path}/${entry.name}`);
+            const entryPath = `${path}/${entry.name}`;
+            entries.push(entryPath);
+            // Store type info for later retrieval
+            this._typeCache.set(entryPath, entry.type === 'directory' ? 'dir' : 'file');
           }
           return entries;
         } catch (error) {
@@ -62,8 +65,11 @@ class SharedFS {
        * @returns {string} - 'file' or 'dir'
        */
       content: (path) => {
-        // This will be populated from the ls() results
-        // For now, check if path ends with a known extension
+        // Return cached type from ls() if available
+        if (this._typeCache.has(path)) {
+          return this._typeCache.get(path);
+        }
+        // Fallback: check if path has an extension (less reliable)
         const parts = path.split('/');
         const name = parts[parts.length - 1];
         if (name.includes('.')) {
@@ -107,12 +113,18 @@ class SharedFS {
       // Write file content
       if (file.content) {
         const chunks = [];
+        let totalLength = 0;
         for await (const chunk of file.content) {
           chunks.push(chunk);
+          totalLength += chunk.length;
         }
-        const content = new Uint8Array(
-          chunks.reduce((acc, chunk) => [...acc, ...chunk], [])
-        );
+        // Efficiently concatenate chunks
+        const content = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const chunk of chunks) {
+          content.set(chunk, offset);
+          offset += chunk.length;
+        }
         await this.mfs.writeBytes(content, filePath, { create: true, parents: true });
       }
     }
@@ -219,13 +231,7 @@ class Sailplane {
     }
 
     // Open or create the OrbitDB database
-    let db;
-    try {
-      db = await this.orbitdb.open(addressStr, { type: 'documents' });
-    } catch (e) {
-      // If opening fails, create a new one
-      db = await this.orbitdb.open(addressStr, { type: 'documents' });
-    }
+    const db = await this.orbitdb.open(addressStr, { type: 'documents' });
 
     // Ensure root directory exists in MFS
     const heliaFs = mfs(this.helia);

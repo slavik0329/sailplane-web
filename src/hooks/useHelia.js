@@ -1,7 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
 import { createHelia } from 'helia';
-import { mfs } from '@helia/mfs';
-import { unixfs } from '@helia/unixfs';
 import { createLibp2p } from 'libp2p';
 import { noise } from '@chainsafe/libp2p-noise';
 import { yamux } from '@chainsafe/libp2p-yamux';

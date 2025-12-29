@@ -67,6 +67,7 @@ function App() {
 
   useEffect(() => {
     rootLS();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, currentDirectory, lastUpdateTime]);
 
   const connectOrbit = useCallback(
@@ -114,7 +115,7 @@ function App() {
       }
       setStatus({});
     },
-    [instances, instanceIndex, addInstance, setStatus, currentInstance],
+    [instances, addInstance, setStatus, currentInstance],
   );
 
   // Connect when Helia is ready
@@ -129,6 +130,7 @@ function App() {
     if (heliaObj.isHeliaReady && heliaObj.helia && ready) {
       connectOrbit(heliaObj.helia, true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instanceIndex, ready, instances]);
 
   const getRightPanel = () => {
