@@ -22,7 +22,7 @@ export function FilePreview({blob, filename}) {
     <div onClick={(event) => event.stopPropagation()} style={styles.container}>
       {['jpg', 'jpeg', 'png', 'gif'].includes(ext) ? (
         <div>
-          <img src={objURL} style={styles.image} />
+          <img src={objURL} alt={filename} style={styles.image} />
         </div>
       ) : null}
       {['mp3', 'wav', 'ogg', 'flac'].includes(ext) ? (

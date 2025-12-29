@@ -167,6 +167,7 @@ export function FileItem({
 
   useEffect(() => {
     getCID();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, helia]);
 
   const IconComponent = iconComponent;

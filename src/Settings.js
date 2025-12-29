@@ -13,8 +13,6 @@ const styles = {
 
 };
 
-export function Settings({
-
-}) {
+export function Settings() {
   return <div style={styles.container}></div>
 }

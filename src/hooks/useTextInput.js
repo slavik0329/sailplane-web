@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {ToolItem} from '../components/ToolItem';
 import {errorColor, goodColor, primary, primary3} from '../colors';
 
@@ -23,6 +23,7 @@ export default function useTextInput(
     if (isError) {
       checkIfError();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inputString]);
 
   const styles = {
@@ -45,6 +46,7 @@ export default function useTextInput(
     } else {
       setInputString(initialValue);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   const component = (
